@@ -1,4 +1,3 @@
-#include "mongoose.h"
 #include "client.h"
 #include "mjson.h"
 #include "stdio.h"
@@ -6,22 +5,22 @@
 // The very first web page in history. You can replace it from command line
 static char s_url[50] = "http://info.cern.ch/";
 static const uint64_t s_timeout_ms = 1500;  // Connect timeout in milliseconds
-
-int cb(int ev, const char *s, int off, int len, void *ud) {
-    printf("%d\n", ev);
-}
+static char result[50];
+static size_t result_len = 0;
 
 void handle_response(int length, const char *data) {
     struct mg_http_message *msg = malloc(sizeof(struct mg_http_message));
     mg_http_parse(data, length, msg);
 
-    char buf[40];
-    int len;
+    result_len = mjson_get_string(msg->body.ptr, strlen(msg->body.ptr), "$.timezone.current_time", result, 50);
 
-    len = mjson_get_string(msg->body.ptr, strlen(msg->body.ptr), "$.timezone.current_time", &buf, 30);
-    
-    if (len > 0)
-        printf("%.*s\n", len, buf);
+    int success = 0;
+    mjson_get_bool(msg->body.ptr, strlen(msg->body.ptr), "$.success", success);
+
+    if (!success) {
+        strcpy(result, "Unknown time\0");
+        result_len = strlen(result);
+    }
 }
 
 // Print HTTP response and signal that we're done
@@ -59,13 +58,16 @@ static void fn(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
   }
 }
 
-void fetch_time(char *ip) {
+// Returns response length
+size_t fetch_time(char *ip, char *to) {
   struct mg_mgr mgr;              // Event manager
   bool done = false;              // Event handler flips it to true
-  snprintf(s_url, 50, "http://ipwho.is/%s", "83.5.163.168");
+  snprintf(s_url, 50, "http://ipwho.is/%s", ip);
   mg_log_set("0");                // Set to 0 to disable debug
   mg_mgr_init(&mgr);              // Initialise event manager
   mg_http_connect(&mgr, s_url, fn, &done);  // Create client connection
   while (!done) mg_mgr_poll(&mgr, 50);      // Infinite event loop
   mg_mgr_free(&mgr);                        // Free resources
+  strcpy(to, result);
+  return result_len;
 }
