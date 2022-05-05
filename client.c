@@ -1,9 +1,10 @@
 #include "mongoose.h"
 #include "client.h"
 #include "mjson.h"
+#include "stdio.h"
 
 // The very first web page in history. You can replace it from command line
-static const char *s_url = "http://info.cern.ch/";
+static char s_url[50] = "http://info.cern.ch/";
 static const uint64_t s_timeout_ms = 1500;  // Connect timeout in milliseconds
 
 int cb(int ev, const char *s, int off, int len, void *ud) {
@@ -14,7 +15,7 @@ void handle_response(int length, const char *data) {
     struct mg_http_message *msg = malloc(sizeof(struct mg_http_message));
     mg_http_parse(data, length, msg);
 
-    const char buf[40];
+    char buf[40];
     int len;
 
     len = mjson_get_string(msg->body.ptr, strlen(msg->body.ptr), "$.timezone.current_time", &buf, 30);
@@ -58,10 +59,10 @@ static void fn(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
   }
 }
 
-void fetch_time(char *url) {
+void fetch_time(char *ip) {
   struct mg_mgr mgr;              // Event manager
   bool done = false;              // Event handler flips it to true
-  s_url = url;
+  snprintf(s_url, 50, "http://ipwho.is/%s", "83.5.163.168");
   mg_log_set("0");                // Set to 0 to disable debug
   mg_mgr_init(&mgr);              // Initialise event manager
   mg_http_connect(&mgr, s_url, fn, &done);  // Create client connection
