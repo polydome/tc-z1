@@ -15,7 +15,7 @@ void handle_response(int length, const char *data) {
     result_len = mjson_get_string(msg->body.ptr, strlen(msg->body.ptr), "$.timezone.current_time", result, 50);
 
     int success = 0;
-    mjson_get_bool(msg->body.ptr, strlen(msg->body.ptr), "$.success", success);
+    mjson_get_bool(msg->body.ptr, strlen(msg->body.ptr), "$.success", &success);
 
     if (!success) {
         strcpy(result, "Unknown time\0");
