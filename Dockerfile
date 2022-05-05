@@ -3,6 +3,8 @@ FROM alpine AS build
 RUN apk add --no-cache build-base
 COPY ./server.c /src/server.c
 COPY ./lib /src/lib
+COPY ./client.c /src/client.c
+COPY ./client.h /src/client.h
 COPY ./Makefile /src/Makefile
 WORKDIR /src
 RUN make server-static && mv server-static server
