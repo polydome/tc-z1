@@ -1,10 +1,12 @@
+LIBS=lib/mongoose.c lib/mjson.c
+
 all: server
 
 server: server.c
-	gcc -Ilib/ server.c lib/mongoose.c -o $@
+	gcc -Ilib/ server.c client.c $(LIBS) -o $@
 
 server-static: server.c
-	gcc -static -Ilib/ server.c lib/mongoose.c -o $@
+	gcc -static -Ilib/ server.c client.c $(LIBS) -o $@
 
 simple: main.c
 	gcc main.c -o $@
