@@ -7,7 +7,7 @@ COPY ./client.c /src/client.c
 COPY ./client.h /src/client.h
 COPY ./Makefile /src/Makefile
 WORKDIR /src
-RUN make server-static && mv server-static server
+RUN make server-static && strip server-static && mv server-static server
 
 # Just the static binary
 FROM scratch
