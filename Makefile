@@ -1,17 +1,20 @@
+CC=gcc
 LIBS=lib/mongoose.c lib/mjson.c
+SRC=src/*.c
+HEADERS=include/
+BUILD=build
 
 all: server
 
-server: server.c
-	gcc -Ilib/ server.c client.c $(LIBS) -o $@
+server: $(SRC) $(LIBS)
+	[ -d $(BUILD) ] || mkdir -p $(BUILD)
+	$(CC) -I$(HEADERS) $(SRC) $(LIBS) -o $(BUILD)/$@
 
-server-static: server.c
-	gcc -static -Ilib/ server.c client.c $(LIBS) -o $@
-
-simple: main.c
-	gcc main.c -o $@
+server-static: $(SRC) $(LIBS)
+	[ -d $(BUILD) ] || mkdir -p $(BUILD)
+	$(CC) -static -I$(HEADERS) $(SRC) $(LIBS) -o $(BUILD)/$@
 
 clean:
-	rm -f server server-static
+	rm -rf build
 
 .PHONY: all clean
