@@ -25,6 +25,7 @@ void log_info() {
 }
 
 int main(int argc, char *argv[]) {
+    setvbuf(stdout, NULL, _IONBF, 0);
     log_info();
     struct mg_mgr mgr;
     mg_mgr_init(&mgr);
