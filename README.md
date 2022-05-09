@@ -31,7 +31,7 @@ docker push localhost:6677/ubuntu
 ```
 
 Wynik działań:
-![[assets/d1.png]]
+![Wynik działań](assets/d1.png)
 
 ## Dodatek 2
 Na początku należy utworzyć użytkownika, który będzie mógł dokonać uwierzytelnienia.
@@ -41,7 +41,7 @@ mkdir auth
 # Tworzy użytkownika o nazwie "user" i haśle "pass" w pliku `auth/htpasswd`
 docker run --entrypoint htpasswd httpd:2 -Bbn user pass > auth/htpasswd
 ```
-![[assets/d2_setup_user.png]]
+![Tworzenie użytkownika](assets/d2_setup_user.png)
 
 Następnie należy uruchomić usługę `registry` z innymi argumentami:
 ```shell
@@ -62,7 +62,7 @@ docker run -d \
 ```
 
 Użycie komendy `push` bez uwierzytelnienia jest niedozwolone:
-![[assets/d2_auth_fail.png]]
+![Nieudana próba](assets/d2_auth_fail.png)
 
 Po zalogowaniu `push` przebiega pomyślnie:
-![[assets/d2_auth_success.png]]
+![Udana próba](assets/d2_auth_success.png)
