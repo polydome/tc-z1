@@ -22,6 +22,15 @@ docker history polydome/z1
 ```
 
 ## Dodatek 1
+Konfiguracja wraz z komentarzami znajduje się w pliku:
+<br>https://github.com/polydome/tc-z1/blob/master/.github/workflows/build-and-push.yml
+
+Przykładowy przypadek działania cache: <br>
+https://github.com/polydome/tc-z1/runs/6355292999?check_suite_focus=true#step:7:146
+![image](https://user-images.githubusercontent.com/36395038/167457450-53b8c190-9777-4ba6-8917-54244e6370ee.png)
+
+## Dodatek 2
+1.
 ```shell
 # Zmienna środowiskowa `REGISTRY_HTTP_ADDR` określa, na jakim adresie usługa nasłuchuje żądań
 docker run -d -e REGISTRY_HTTP_ADDR=0.0.0.0:6677 -p 6677:6677 --name reg registry:2
@@ -33,7 +42,7 @@ docker push localhost:6677/ubuntu
 Wynik działań:
 ![Wynik działań](assets/d1.png)
 
-## Dodatek 2
+2.
 Na początku należy utworzyć użytkownika, który będzie mógł dokonać uwierzytelnienia.
 ```shell
 # Tworzy katalog przechowujący dane uwierzytelniające użytkowników
