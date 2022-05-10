@@ -27,8 +27,8 @@ Działanie usługi wystawionej w zewnętrznej lokalizacji: <br>
 Budowanie na wskazane architektury, wraz z przesyłaniem na DockerHub:
 ```
 docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-create --name container_builder --driver docker-container --bootstrap --use
-docker buildx build -t polydome/z1 --platform linux/arm/v8,linux/arm/v7,linux/amd64 --push .
+docker buildx create --name container_builder --driver docker-container --bootstrap --use
+docker buildx build -t polydome/z1 --platform linux/arm64/v8,linux/arm/v7,linux/amd64 --push .
 ```
 
 ## Dodatek 1
