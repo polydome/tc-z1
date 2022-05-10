@@ -21,7 +21,10 @@ Aby sprawdzić ile warstw posiada zbudowany obraz:
 docker history polydome/z1
 ```
 
-Budowanie na wskazane architektury, wraz z przesyłaniem na DockerHub
+Działanie usługi wystawionej w zewnętrznej lokalizacji: <br>
+![image](https://user-images.githubusercontent.com/36395038/167582235-038a9321-3945-485d-b179-e6c4a4ddca4c.png)
+
+Budowanie na wskazane architektury, wraz z przesyłaniem na DockerHub:
 ```
 docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 create --name container_builder --driver docker-container --bootstrap --use
