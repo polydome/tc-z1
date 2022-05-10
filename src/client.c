@@ -2,72 +2,83 @@
 #include "mjson.h"
 #include "stdio.h"
 
-// The very first web page in history. You can replace it from command line
-static char s_url[50] = "http://info.cern.ch/";
-static const uint64_t s_timeout_ms = 1500;  // Connect timeout in milliseconds
-static char result[50];
-static size_t result_len = 0;
+#define URL_SIZE 100
 
-void handle_response(int length, const char *data) {
-    struct mg_http_message *msg = malloc(sizeof(struct mg_http_message));
-    mg_http_parse(data, length, msg);
+static char s_url[URL_SIZE];
+static const uint64_t TIMEOUT_MS = 1500;
+static char s_result[50];
+static size_t s_result_len = 0;
 
-    result_len = mjson_get_string(msg->body.ptr, strlen(msg->body.ptr), "$.timezone.current_time", result, 50);
+void handle_response(struct mg_http_message *message) {
+    s_result_len = mjson_get_string(message->body.ptr, strlen(message->body.ptr), "$.timezone.current_time", s_result, 50);
 
     int success = 0;
-    mjson_get_bool(msg->body.ptr, strlen(msg->body.ptr), "$.success", &success);
+    mjson_get_bool(message->body.ptr, strlen(message->body.ptr), "$.success", &success);
 
     if (!success) {
-        strcpy(result, "Unknown time\0");
-        result_len = strlen(result);
+        strcpy(s_result, "Unknown time\0");
+        s_result_len = strlen(s_result);
     }
+}
+
+void init_connection(struct mg_connection *c) {
+  *(uint64_t *) c->label = mg_millis() + TIMEOUT_MS;
+}
+
+void check_timeout(struct mg_connection *c) {
+  bool timed_out = mg_millis() > *(uint64_t *) c->label;
+  bool is_active = c->is_connecting || c->is_resolving;
+  if (timed_out && is_active) {
+      mg_error(c, "Connect timeout");
+    }
+}
+
+void send_request(struct mg_connection *c) {
+  struct mg_str host = mg_url_host(s_url);
+
+  mg_printf(c,
+            "GET %s HTTP/1.0\r\n"
+            "Host: %.*s\r\n"
+            "Content-Type: octet-stream\r\n"
+            "Content-Length: 0\r\n"
+            "\r\n",
+            mg_url_uri(s_url), (int) host.len, host.ptr);
+
+  mg_send(c, NULL, 0);
 }
 
 // Print HTTP response and signal that we're done
 static void fn(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
-  if (ev == MG_EV_OPEN) {
-    // Connection created. Store connect expiration time in c->label
-    *(uint64_t *) c->label = mg_millis() + s_timeout_ms;
-  } else if (ev == MG_EV_POLL) {
-    if (mg_millis() > *(uint64_t *) c->label &&
-        (c->is_connecting || c->is_resolving)) {
-      mg_error(c, "Connect timeout");
-    }
-  } else if (ev == MG_EV_CONNECT) {
-    // Connected to server. Extract host name from URL
-    struct mg_str host = mg_url_host(s_url);
-
-    // Send request
-    mg_printf(c,
-              "%s %s HTTP/1.0\r\n"
-              "Host: %.*s\r\n"
-              "Content-Type: octet-stream\r\n"
-              "Content-Length: %d\r\n"
-              "\r\n",
-              "GET", mg_url_uri(s_url), (int) host.len,
-              host.ptr, 0);
-    mg_send(c, NULL, 0);
-  } else if (ev == MG_EV_HTTP_MSG) {
-    // Response is received. Print it
-    struct mg_http_message *hm = (struct mg_http_message *) ev_data;
-    handle_response((int) hm->message.len, hm->message.ptr);
-    c->is_closing = 1;         // Tell mongoose to close this connection
-    *(bool *) fn_data = true;  // Tell event loop to stop
-  } else if (ev == MG_EV_ERROR) {
-    *(bool *) fn_data = true;  // Error, tell event loop to stop
+  switch (ev) {
+    case MG_EV_OPEN: init_connection(c); break;
+    case MG_EV_POLL: check_timeout(c); break;
+    case MG_EV_CONNECT: send_request(c); break;
+    case MG_EV_HTTP_MSG:
+      handle_response((struct mg_http_message *) ev_data);
+      c->is_closing = 1;
+      *(bool *) fn_data = true;
+      break;
+    case MG_EV_ERROR:
+      *(bool *) fn_data = true;
+      break;
   }
 }
 
-// Returns response length
-size_t fetch_time(char *ip, char *to) {
-  struct mg_mgr mgr;              // Event manager
-  bool done = false;              // Event handler flips it to true
-  snprintf(s_url, 50, "http://ipwho.is/%s", ip);
-  mg_log_set("0");                // Set to 0 to disable debug
-  mg_mgr_init(&mgr);              // Initialise event manager
-  mg_http_connect(&mgr, s_url, fn, &done);  // Create client connection
-  while (!done) mg_mgr_poll(&mgr, 50);      // Infinite event loop
-  mg_mgr_free(&mgr);                        // Free resources
-  strcpy(to, result);
-  return result_len;
+size_t fetch_time(char *ip, char *buf, size_t buf_size) {
+  snprintf(s_url, URL_SIZE, "http://ipwho.is/%s", ip);
+
+  struct mg_mgr mgr;
+  bool done = false;
+
+  mg_log_set("0");
+  mg_mgr_init(&mgr);
+  mg_http_connect(&mgr, s_url, fn, &done);
+
+  while (!done)
+    mg_mgr_poll(&mgr, 50);
+
+  mg_mgr_free(&mgr);
+
+  snprintf(buf, buf_size, "%s", s_result);
+  return s_result_len;
 }
